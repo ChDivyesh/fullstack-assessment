@@ -3,13 +3,14 @@ import productsData from '@/sample-products.json';
 export interface Product {
   stacklineSku: string;
   featureBullets: string[];
-  imageUrls: string[];
+  imageUrls?: string[];
   subCategoryId: number;
   title: string;
   categoryName: string;
   retailerSku: string;
   categoryId: number;
   subCategoryName: string;
+  retailPrice?: number;
 }
 
 export interface ProductFilters {
@@ -80,8 +81,36 @@ export class ProductService {
     return Array.from(subCategories).sort();
   }
 
+  private applyBaseFilters(filters?: Omit<ProductFilters, 'limit' | 'offset'>): Product[] {
+    let filtered = [...this.products];
+
+    if (filters?.category) {
+      filtered = filtered.filter(
+        (p) => p.categoryName.toLowerCase() === filters.category!.toLowerCase()
+      );
+    }
+
+    if (filters?.subCategory) {
+      filtered = filtered.filter(
+        (p) => p.subCategoryName.toLowerCase() === filters.subCategory!.toLowerCase()
+      );
+    }
+
+    if (filters?.search) {
+      const searchLower = filters.search.toLowerCase();
+      filtered = filtered.filter(
+        (p) =>
+          p.title.toLowerCase().includes(searchLower) ||
+          p.categoryName.toLowerCase().includes(searchLower) ||
+          p.subCategoryName.toLowerCase().includes(searchLower)
+      );
+    }
+
+    return filtered;
+  }
+
   getTotalCount(filters?: Omit<ProductFilters, 'limit' | 'offset'>): number {
-    return this.getAll(filters).length;
+    return this.applyBaseFilters(filters).length;
   }
 }
 
